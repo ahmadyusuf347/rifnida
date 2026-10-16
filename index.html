@@ -1,0 +1,583 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Galeri Foto — Ahmad Yusuf</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=DM+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --table: #e7ecef; /* meja lampu (light table) */
+        --ink: #1b1f23;
+        --mute: #5d6770;
+        --film: #111418; /* strip film */
+        --edge: #f0a43a; /* kode tepi film */
+        --pencil: #d7263d; /* tanda spidol merah */
+        --line: #c9d1d6;
+        --f: "Bricolage Grotesque", Arial, sans-serif;
+        --m: "DM Mono", ui-monospace, Menlo, Consolas, monospace;
+      }
+      * {
+        box-sizing: border-box;
+        margin: 0;
+      }
+      html {
+        scroll-behavior: smooth;
+      }
+      body {
+        background: var(--table);
+        color: var(--ink);
+        font: 400 1.05rem/1.55 var(--f);
+        -webkit-font-smoothing: antialiased;
+        min-height: 100vh;
+      }
+      button {
+        font: inherit;
+        color: inherit;
+        cursor: pointer;
+      }
+      :focus-visible {
+        outline: 3px solid var(--pencil);
+        outline-offset: 3px;
+      }
+      .wrap {
+        max-width: 1240px;
+        margin: 0 auto;
+        padding: 0 clamp(1rem, 4vw, 2.5rem);
+      }
+
+      /* filter */
+      .bar {
+        position: sticky;
+        top: 0;
+        z-index: 5;
+        background: color-mix(in srgb, var(--table) 90%, transparent);
+        backdrop-filter: blur(8px);
+        border-bottom: 1px solid var(--line);
+      }
+      .bar .wrap {
+        display: flex;
+        gap: 0.5rem;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        padding-top: 0.8rem;
+        padding-bottom: 0.8rem;
+      }
+      .chips {
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+      }
+      .chip {
+        border: 1.5px solid var(--ink);
+        background: transparent;
+        border-radius: 999px;
+        padding: 0.4rem 0.95rem;
+        font-weight: 600;
+        font-size: 0.92rem;
+      }
+      .chip:hover {
+        background: #d6dde1;
+      }
+      .chip[aria-pressed="true"] {
+        background: var(--ink);
+        color: var(--table);
+      }
+      .count {
+        font: 400 0.82rem var(--m);
+        color: var(--mute);
+      }
+
+      /* galeri tanpa gap & bingkai */
+      .sheet {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(min(100%, 16rem), 1fr));
+        gap: 0;
+      }
+      .frame {
+        position: relative;
+        overflow: hidden;
+        background: #222;
+      }
+      .shot {
+        all: unset;
+        display: block;
+        width: 100%;
+        cursor: zoom-in;
+        position: relative;
+      }
+      .shot .img {
+        display: block;
+        width: 100%;
+        aspect-ratio: 1/1;
+        object-fit: cover;
+      }
+      .meta {
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        padding: 2.5rem 0.9rem 0.8rem;
+        pointer-events: none;
+        color: #fff;
+        background: linear-gradient(transparent, rgba(0, 0, 0, 0.7));
+        opacity: 0;
+        transition: opacity 0.2s;
+      }
+      .frame:hover .meta,
+      .frame:focus-within .meta {
+        opacity: 1;
+      }
+      .meta b {
+        display: block;
+        font-weight: 600;
+        font-size: 0.98rem;
+        line-height: 1.3;
+      }
+      .meta span {
+        font: 400 0.75rem var(--m);
+        opacity: 0.85;
+      }
+      /* bintang favorit */
+      .mark {
+        position: absolute;
+        top: 0.5rem;
+        right: 0.5rem;
+        z-index: 2;
+        display: grid;
+        place-items: center;
+        width: 2.4rem;
+        height: 2.4rem;
+        border: none;
+        background: none;
+        padding: 0;
+        opacity: 0;
+        transition: opacity 0.15s;
+      }
+      .mark svg {
+        width: 1.4rem;
+        height: 1.4rem;
+        fill: #fff;
+        filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.65));
+      }
+      .mark .f {
+        display: none;
+        fill: #f5b301;
+      }
+      .mark[aria-pressed="true"] .o {
+        display: none;
+      }
+      .mark[aria-pressed="true"] .f {
+        display: block;
+      }
+      .frame:hover .mark,
+      .mark:focus-visible,
+      .mark[aria-pressed="true"] {
+        opacity: 1;
+      }
+      @media (hover: none) {
+        .mark {
+          opacity: 1;
+        }
+      }
+      .kosong {
+        grid-column: 1/-1;
+        padding: 3rem clamp(1rem, 4vw, 2.5rem);
+        color: var(--mute);
+      }
+
+      /* lightbox */
+      dialog {
+        border: none;
+        padding: 0;
+        background: transparent;
+        width: 100%;
+        height: 100%;
+        max-width: none;
+        max-height: none;
+        color: #eef2f4;
+      }
+      dialog::backdrop {
+        background: rgba(8, 10, 12, 0.94);
+      }
+      .lb {
+        height: 100%;
+        display: grid;
+        grid-template-rows: auto 1fr auto;
+        gap: 1rem;
+        padding: 1rem clamp(1rem, 4vw, 2.5rem) 1.5rem;
+      }
+      .lb-top,
+      .lb-bot {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 1rem;
+      }
+      .lb-top {
+        font: 400 0.85rem var(--m);
+      }
+      .lb-stage {
+        display: grid;
+        grid-template-columns: 3.2rem 1fr 3.2rem;
+        align-items: center;
+        gap: 0.5rem;
+        min-height: 0;
+      }
+      .lb-img {
+        min-height: 0;
+        height: 100%;
+        display: grid;
+        place-items: center;
+      }
+      .lb-img img,
+      .lb-img .ph {
+        max-width: 100%;
+        max-height: 100%;
+        object-fit: contain;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+      }
+      .lb-img .ph {
+        width: min(100%, 70vh * 1.5);
+        aspect-ratio: 3/2;
+      }
+      .nav {
+        width: 3rem;
+        height: 3rem;
+        border-radius: 50%;
+        border: 1.5px solid #5b656d;
+        background: transparent;
+        font-size: 1.3rem;
+        color: #eef2f4;
+        justify-self: center;
+      }
+      .nav:hover {
+        background: #fff;
+        color: #111;
+      }
+      .lb-bot h2 {
+        font-weight: 700;
+        font-size: 1.25rem;
+        line-height: 1.2;
+      }
+      .lb-bot p {
+        font: 400 0.8rem var(--m);
+        color: #9aa5ad;
+        margin-top: 0.25rem;
+      }
+      .lbtn {
+        border: 1.5px solid #5b656d;
+        background: transparent;
+        border-radius: 999px;
+        padding: 0.45rem 1rem;
+        font-weight: 600;
+        font-size: 0.9rem;
+        color: #eef2f4;
+      }
+      .lbtn:hover {
+        background: #fff;
+        color: #111;
+      }
+      .lbtn[aria-pressed="true"] {
+        background: #f5b301;
+        border-color: #f5b301;
+        color: #111;
+      }
+      footer {
+        border-top: 1px solid var(--line);
+        padding: 1.5rem 0 3rem;
+        font: 400 0.8rem var(--m);
+        color: var(--mute);
+      }
+
+      @media (max-width: 640px) {
+        .sheet {
+          grid-template-columns: repeat(2, 1fr);
+        }
+        .lb-stage {
+          grid-template-columns: 1fr;
+          position: relative;
+        }
+        .nav {
+          display: grid;
+          place-items: center;
+          position: absolute;
+          top: 50%;
+          transform: translateY(-50%);
+          z-index: 2;
+          background: rgba(0, 0, 0, 0.55);
+          border-color: rgba(255, 255, 255, 0.5);
+        }
+        #lbP {
+          left: 0.25rem;
+        }
+        #lbF {
+          right: 0.25rem;
+        }
+        .bar .wrap {
+          display: block;
+        }
+        .chips {
+          display: grid;
+          grid-template-columns: repeat(6, 1fr);
+          gap: 0.4rem;
+        }
+        .chip {
+          padding: 0.4rem 0;
+          font-size: 0.82rem;
+          text-align: center;
+        }
+        .chip .fc,
+        .count {
+          display: none;
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        * {
+          transition: none !important;
+        }
+        html {
+          scroll-behavior: auto;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="bar">
+      <div class="wrap">
+        <div
+          class="chips"
+          id="chips"
+          role="group"
+          aria-label="Filter tahun"
+        ></div>
+        <span class="count" id="count"></span>
+      </div>
+    </div>
+
+    <main><div class="sheet" id="sheet"></div></main>
+
+    <footer>
+      <div class="wrap">© <span id="yr"></span> Ahmad Yusuf</div>
+    </footer>
+
+    <dialog id="lb" aria-label="Penampil foto">
+      <div class="lb">
+        <div class="lb-top">
+          <span id="lbN"></span
+          ><button class="lbtn" id="lbX" type="button">Tutup (Esc)</button>
+        </div>
+        <div class="lb-stage">
+          <button
+            class="nav"
+            id="lbP"
+            type="button"
+            aria-label="Foto sebelumnya"
+          >
+            ←
+          </button>
+          <div class="lb-img" id="lbI"></div>
+          <button
+            class="nav"
+            id="lbF"
+            type="button"
+            aria-label="Foto berikutnya"
+          >
+            →
+          </button>
+        </div>
+        <div class="lb-bot">
+          <div>
+            <h2 id="lbT"></h2>
+            <p id="lbM"></p>
+          </div>
+          <button class="lbtn" id="lbM2" type="button" aria-pressed="false">
+            Tandai favorit
+          </button>
+        </div>
+      </div>
+    </dialog>
+
+    <script>
+      /* ===== EDIT DI SINI =====
+   Format: [path foto, judul, tahun, lokasi]
+   Simpan foto di folder asset/foto/ lalu isi path-nya.
+   Tahun harus salah satu dari daftar YEARS di bawah.
+   Path kosong ("") = tampil sebagai bingkai contoh. */
+      const YEARS = [
+        2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025, 2026, 2027,
+      ];
+      const PHOTOS = [
+        ["asset/2026/DSC_3934.jpg", "Foto Lebaran 2026", 2026, "Sukabumi"],
+        ["asset/2026/DSC_3960.jpg", "Foto Lebaran 2026", 2026, "Sukabumi"],
+        ["asset/2026/DSC_3969.jpg", "Foto Lebaran 2026", 2026, "Sukabumi"],
+        ["asset/2026/DSC_3972.jpg", "Foto Lebaran 2026", 2026, "Sukabumi"],
+        ["asset/2026/DSC_3928.jpg", "Foto Lebaran 2026", 2026, "Sukabumi"],
+        ["", "Hujan di jalan raya", 2026, "Jakarta"],
+        ["", "Tawa di kelas", 2025, "Kampus"],
+        ["", "Kabut di kebun teh", 2025, "Puncak"],
+        ["", "Lampu malam", 2024, "Bogor"],
+        ["", "Potret sederhana", 2023, "Kampus"],
+        ["", "Air terjun kecil", 2022, "Sentul"],
+        ["", "Pasar pagi", 2020, "Bogor"],
+        ["", "Teman lama", 2019, "Depok"],
+      ];
+      /* ======================== */
+
+      const $ = (id) => document.getElementById(id);
+      const esc = (s) =>
+        String(s).replace(
+          /[&<>"]/g,
+          (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c],
+        );
+      const pad = (n) => String(n).padStart(2, "0");
+
+      /* favorit disimpan di browser (aman jika storage tidak tersedia) */
+      let favs = new Set();
+      try {
+        favs = new Set(JSON.parse(localStorage.getItem("favs") || "[]"));
+      } catch (e) {}
+      const saveFavs = () => {
+        try {
+          localStorage.setItem("favs", JSON.stringify([...favs]));
+        } catch (e) {}
+      };
+
+      const ph = (i, cls) => {
+        // bingkai contoh bila foto belum ada
+        const h = (i * 47 + 190) % 360;
+        return `<div class="${cls}" style="background:linear-gradient(${120 + i * 20}deg,hsl(${h} 28% 34%),hsl(${(h + 40) % 360} 32% 18%))"></div>`;
+      };
+      const pic = (p, i, cls) =>
+        p
+          ? `<img class="${cls}" src="${esc(p)}" alt="${esc(PHOTOS[i][1])}" loading="lazy" onerror="this.outerHTML=window.__ph(${i},'${cls}')">`
+          : ph(i, cls);
+      window.__ph = ph;
+
+      const albums = ["All", ...YEARS.map(String), "Favorit"];
+      let filter = "All",
+        list = [],
+        cur = 0;
+
+      function visible() {
+        return PHOTOS.map((p, i) => i).filter((i) =>
+          filter === "All"
+            ? true
+            : filter === "Favorit"
+              ? favs.has(i)
+              : String(PHOTOS[i][2]) === filter,
+        );
+      }
+      const MARK =
+        '<svg class="o" viewBox="0 0 16 16" aria-hidden="true"><path d="M2.866 14.85c-.078.444.36.791.746.593l4.39-2.256 4.389 2.256c.386.198.824-.149.746-.592l-.83-4.73 3.522-3.356c.33-.314.16-.888-.282-.95l-4.898-.696L8.465.792a.513.513 0 0 0-.927 0L5.354 5.12l-4.898.696c-.441.062-.612.636-.283.95l3.523 3.356-.83 4.73zm4.905-2.767-3.686 1.894.694-3.957a.56.56 0 0 0-.163-.505L1.71 6.745l4.052-.576a.53.53 0 0 0 .393-.288L8 2.223l1.847 3.658a.53.53 0 0 0 .393.288l4.052.575-2.906 2.77a.56.56 0 0 0-.163.506l.694 3.957-3.686-1.894a.5.5 0 0 0-.461 0z"/></svg><svg class="f" viewBox="0 0 16 16" aria-hidden="true"><path d="M3.612 15.443c-.386.198-.824-.149-.746-.592l.83-4.73L.173 6.765c-.329-.314-.158-.888.283-.95l4.898-.696L7.538.792c.197-.39.73-.39.927 0l2.184 4.327 4.898.696c.441.062.612.636.282.95l-3.522 3.356.83 4.73c.078.443-.36.79-.746.592L8 13.187l-4.389 2.256z"/></svg>';
+
+      function render() {
+        list = visible();
+        $("chips").innerHTML = albums
+          .map(
+            (a) =>
+              `<button class="chip" type="button" aria-pressed="${a === filter}" data-a="${a}">${a}${a === "Favorit" ? `<span class="fc"> (${favs.size})</span>` : ""}</button>`,
+          )
+          .join("");
+        $("count").textContent = `${list.length} dari ${PHOTOS.length} foto`;
+        $("sheet").innerHTML = list.length
+          ? list
+              .map((i, n) => {
+                const [p, t, a, k] = PHOTOS[i];
+                return `<figure class="frame">
+      <button class="shot" type="button" data-n="${n}" aria-label="Perbesar: ${esc(t)}">${pic(p, i, "img")}</button>
+      <button class="mark" type="button" data-i="${i}" aria-pressed="${favs.has(i)}" aria-label="Tandai favorit: ${esc(t)}">${MARK}</button>
+      <figcaption class="meta"><b>${esc(t)}</b><span>${esc(a)}</span></figcaption>
+    </figure>`;
+              })
+              .join("")
+          : `<p class="kosong">Belum ada foto favorit. Klik bintang di pojok foto untuk menandai favorit.</p>`;
+      }
+
+      function toggle(i) {
+        favs.has(i) ? favs.delete(i) : favs.add(i);
+        saveFavs();
+        const keep = filter === "Favorit" && !favs.has(i);
+        if (keep && $("lb").open) {
+          render();
+          if (!list.length) $("lb").close();
+          else open(Math.min(cur, list.length - 1));
+        } else {
+          render();
+          if ($("lb").open) sync();
+        }
+      }
+
+      /* lightbox */
+      function sync() {
+        const i = list[cur],
+          [p, t, a, k] = PHOTOS[i];
+        $("lbN").textContent = `${pad(cur + 1)} / ${pad(list.length)}`;
+        $("lbI").innerHTML = p
+          ? `<img src="${esc(p)}" alt="${esc(t)}" onerror="this.outerHTML=window.__ph(${i},'ph')">`
+          : ph(i, "ph");
+        $("lbT").textContent = t;
+        $("lbM").textContent = `${a} · ${k}`;
+        $("lbM2").setAttribute("aria-pressed", favs.has(i));
+        $("lbM2").textContent = favs.has(i) ? "Favorit ✓" : "Tandai favorit";
+      }
+      function open(n) {
+        cur = n;
+        if (!$("lb").open) $("lb").showModal();
+        sync();
+      }
+      const step = (d) => {
+        cur = (cur + d + list.length) % list.length;
+        sync();
+      };
+
+      $("chips").onclick = (e) => {
+        const b = e.target.closest(".chip");
+        if (b) {
+          filter = b.dataset.a;
+          render();
+        }
+      };
+      $("sheet").onclick = (e) => {
+        const m = e.target.closest(".mark"),
+          s = e.target.closest(".shot");
+        if (m) toggle(+m.dataset.i);
+        else if (s) open(+s.dataset.n);
+      };
+      let tx = null;
+      $("lbI").addEventListener(
+        "touchstart",
+        (e) => {
+          tx = e.touches[0].clientX;
+        },
+        { passive: true },
+      );
+      $("lbI").addEventListener("touchend", (e) => {
+        if (tx === null) return;
+        const dx = e.changedTouches[0].clientX - tx;
+        tx = null;
+        if (Math.abs(dx) > 50) step(dx < 0 ? 1 : -1);
+      });
+      $("lbX").onclick = () => $("lb").close();
+      $("lbP").onclick = () => step(-1);
+      $("lbF").onclick = () => step(1);
+      $("lbM2").onclick = () => toggle(list[cur]);
+      $("lb").addEventListener("keydown", (e) => {
+        if (e.key === "ArrowLeft") step(-1);
+        if (e.key === "ArrowRight") step(1);
+      });
+      $("lb").addEventListener("click", (e) => {
+        if (e.target === $("lb")) $("lb").close();
+      });
+
+      $("yr").textContent = new Date().getFullYear();
+      render();
+    </script>
+  </body>
+</html>
